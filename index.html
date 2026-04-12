@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Hero Exchange - Exchange Stone Calculator</title>
+
+<style>
+body {
+  font-family: 'Segoe UI', Arial;
+  background: linear-gradient(135deg, #1e1e2f, #2a2a40);
+  color: #fff;
+  padding: 20px;
+}
+
+.container {
+  max-width: 1000px;
+  margin: auto;
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.card {
+  background: #2f2f4a;
+  padding: 20px;
+  border-radius: 12px;
+}
+
+label {
+  display: block;
+  margin-top: 10px;
+}
+
+input, select {
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+  border-radius: 6px;
+  border: none;
+  background: #1e1e2f;
+  color: white;
+}
+
+.result-box {
+  margin-top: 30px;
+  text-align: center;
+  background: #1e1e2f;
+  padding: 20px;
+  border-radius: 12px;
+}
+
+#result {
+  font-size: 32px;
+  margin-top: 10px;
+  color: #6c8cff;
+}
+
+@media (max-width: 800px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>Hero Exchange - Exchange Stone Calculator</h1>
+
+<div class="grid">
+
+<div class="card">
+<h3>Hero 1</h3>
+
+<label>Stars</label>
+<select id="h1_stars"></select>
+
+<label>Extra Fragments</label>
+<input type="number" id="h1_fragments" min="0" max="1000">
+
+<label>Awaken</label>
+<select id="h1_awaken">
+<option>Yes</option>
+<option>No</option>
+</select>
+
+<label>Awakening Page</label>
+<select id="h1_page"></select>
+
+<label>Awakening Bubble Progress</label>
+<select id="h1_bubble"></select>
+</div>
+
+<div class="card">
+<h3>Hero 2</h3>
+
+<label>Stars</label>
+<select id="h2_stars"></select>
+
+<label>Extra Fragments</label>
+<input type="number" id="h2_fragments" min="0" max="1000">
+
+<label>Awaken</label>
+<select id="h2_awaken">
+<option>Yes</option>
+<option>No</option>
+</select>
+
+<label>Awakening Page</label>
+<select id="h2_page"></select>
+
+<label>Awakening Bubble Progress</label>
+<select id="h2_bubble"></select>
+</div>
+
+</div>
+
+<div class="result-box">
+<h3>Needed Exchange Stones</h3>
+<div id="result">-</div>
+</div>
+
+</div>
+
+<script>
+
+// ----------------------
+// TABELLEN
+// ----------------------
+
+const starValues = {
+0:0,1:20,2:40,3:60,4:80,5:100,6:140,7:180,8:220,9:260,
+10:300,11:370,12:440,13:510,14:580,15:650,16:770,
+17:890,18:1010,19:1130,20:1250,21:1450,22:1650,23:1850,24:2050,25:2250
+};
+
+const awakenTable = {
+  0: [0],
+  1: [0,7,14,20,27,34,40,47,54,60,67,74,80,87,94,100,120],
+  2: [120,134,147,160,174,187,200,214,227,240,254,267,280,294,307,320,360],
+  3: [360,380,400,420,440,460,480,500,520,540,560,580,600,620,640,660,720],
+  4: [720,747,774,800,827,854,880,907,934,960,987,1014,1040,1067,1094,1120,1200]
+};
+
+// ----------------------
+// DROPDOWNS
+// ----------------------
+
+function fillDropdown(id, max){
+let el = document.getElementById(id);
+for(let i=0;i<=max;i++){
+let o=document.createElement("option");
+o.value=i;
+o.text=i;
+el.appendChild(o);
+}
+}
+
+fillDropdown("h1_stars",25);
+fillDropdown("h2_stars",25);
+fillDropdown("h1_page",4);
+fillDropdown("h2_page",4);
+fillDropdown("h1_bubble",16);
+fillDropdown("h2_bubble",16);
+
+// ----------------------
+// BERECHNUNG
+// ----------------------
+
+function berechnen(){
+
+let h1s = +h1_stars.value;
+let h1f = parseInt(h1_fragments.value) || 0;
+let h1a = h1_awaken.value;
+let h1p = +h1_page.value;
+let h1b = +h1_bubble.value;
+
+let h2s = +h2_stars.value;
+let h2f = parseInt(h2_fragments.value) || 0;
+let h2a = h2_awaken.value;
+let h2p = +h2_page.value;
+let h2b = +h2_bubble.value;
+
+
+// ----------------------
+// ZWISCHENSUMMEN
+// ----------------------
+
+let zs1 = starValues[h1s] / 10;
+let zs2 = Math.ceil(h1f / 10);
+
+let zs3 = (h1a==="Yes" && awakenTable[h1p][h1b] !== undefined)
+? awakenTable[h1p][h1b]
+: 0;
+
+let zs5 = starValues[h2s] / 10;
+let zs6 = Math.ceil(h2f / 10);
+
+let zs7 = (h2a==="Yes" && awakenTable[h2p][h2b] !== undefined)
+? awakenTable[h2p][h2b]
+: 0;
+
+
+// ----------------------
+// AWAKEN REGELN
+// ----------------------
+
+// Reset
+h1_page.disabled = false;
+h1_bubble.disabled = false;
+h2_page.disabled = false;
+h2_bubble.disabled = false;
+
+let zs4 = 0;
+
+// beide No
+if(h1a==="No" && h2a==="No"){
+  zs3 = 0;
+  zs7 = 0;
+
+  h1_page.disabled = true;
+  h1_bubble.disabled = true;
+  h2_page.disabled = true;
+  h2_bubble.disabled = true;
+}
+
+// nur Hero1
+else if(h1a==="Yes" && h2a==="No"){
+  h2_page.disabled = true;
+  h2_bubble.disabled = true;
+
+  if(h1p > 0 && h1b > 0) zs4 = 100;
+}
+
+// nur Hero2
+else if(h2a==="Yes" && h1a==="No"){
+  h1_page.disabled = true;
+  h1_bubble.disabled = true;
+
+  if(h2p > 0 && h2b > 0) zs4 = 100;
+}
+
+// beide Yes → alles aktiv
+
+
+// ----------------------
+// FINALE RECHNUNG
+// ----------------------
+
+let zs8 = zs1 + zs2 + zs3;
+let zs9 = zs5 + zs6 + zs7;
+
+let zs10 = Math.abs(zs8 - zs9);
+
+let result = Math.round(zs10 + zs4);
+
+document.getElementById("result").innerText = result;
+}
+
+// ----------------------
+// EVENTS
+// ----------------------
+
+document.querySelectorAll("input,select")
+.forEach(e=>e.addEventListener("change",berechnen));
+
+// Initial
+berechnen();
+
+</script>
+
+</body>
+</html>
