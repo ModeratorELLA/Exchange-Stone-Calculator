@@ -49,24 +49,32 @@ input, select {
   color: white;
 }
 
+button {
+  padding: 10px;
+  margin-top: 10px;
+  border: none;
+  border-radius: 8px;
+  background: #6c8cff;
+  color: white;
+  cursor: pointer;
+}
+
+.button-group {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-top: 20px;
+}
+
 .result-box {
   margin-top: 30px;
   text-align: center;
-  background: #1e1e2f;
-  padding: 20px;
-  border-radius: 12px;
 }
 
 #result {
   font-size: 32px;
   margin-top: 10px;
   color: #6c8cff;
-}
-
-@media (max-width: 800px) {
-  .grid {
-    grid-template-columns: 1fr;
-  }
 }
 </style>
 </head>
@@ -86,7 +94,7 @@ input, select {
 <select id="h1_stars"></select>
 
 <label>Extra Fragments</label>
-<input type="number" id="h1_fragments" min="0" max="1000">
+<input type="number" id="h1_fragments">
 
 <label>Awaken</label>
 <select id="h1_awaken">
@@ -97,8 +105,9 @@ input, select {
 <label>Awakening Page</label>
 <select id="h1_page"></select>
 
-<label>Awakening Bubble Progress</label>
+<label>Awakening Bubble</label>
 <select id="h1_bubble"></select>
+
 </div>
 
 <div class="card">
@@ -108,7 +117,7 @@ input, select {
 <select id="h2_stars"></select>
 
 <label>Extra Fragments</label>
-<input type="number" id="h2_fragments" min="0" max="1000">
+<input type="number" id="h2_fragments">
 
 <label>Awaken</label>
 <select id="h2_awaken">
@@ -119,10 +128,18 @@ input, select {
 <label>Awakening Page</label>
 <select id="h2_page"></select>
 
-<label>Awakening Bubble Progress</label>
+<label>Awakening Bubble</label>
 <select id="h2_bubble"></select>
+
 </div>
 
+</div>
+
+<div class="button-group">
+<button onclick="berechnen()">Calculate</button>
+<button onclick="resetHero1()">Reset Hero 1</button>
+<button onclick="resetHero2()">Reset Hero 2</button>
+<button onclick="resetAll()">Reset All</button>
 </div>
 
 <div class="result-box">
@@ -134,10 +151,7 @@ input, select {
 
 <script>
 
-// ----------------------
-// TABELLEN
-// ----------------------
-
+// Tabellen
 const starValues = {
 0:0,1:20,2:40,3:60,4:80,5:100,6:140,7:180,8:220,9:260,
 10:300,11:370,12:440,13:510,14:580,15:650,16:770,
@@ -146,18 +160,23 @@ const starValues = {
 
 const awakenTable = {
   0: [0],
-  1: [0,7,14,20,27,34,40,47,54,60,67,74,80,87,94,100,120],
-  2: [120,134,147,160,174,187,200,214,227,240,254,267,280,294,307,320,360],
-  3: [360,380,400,420,440,460,480,500,520,540,560,580,600,620,640,660,720],
-  4: [720,747,774,800,827,854,880,907,934,960,987,1014,1040,1067,1094,1120,1200]
+  1: [0,20,40,60,80,100,120,140,160,180,200,220,240,260,280,300,360],
+  2: [360,400,440,480,520,560,600,640,680,720,760,800,840,880,920,960,1080],
+  3: [1080,1140,1200,1260,1320,1380,1440,1500,1560,1620,1680,1740,1800,1860,1920,1980,2160],
+  4: [2160,2240,2320,2400,2480,2560,2640,2720,2800,2880,2960,3040,3120,3200,3280,3360,3600]
 };
 
-// ----------------------
-// DROPDOWNS
-// ----------------------
+const stonesValue = {
+  0: [0],
+  1: [0,0,0,0,4,4,4,4,7,7,7,7,10,10,10,10,20],
+  2: [20,20,20,20,29,29,29,29,37,37,37,37,45,45,45,45,70],
+  3: [70,70,70,70,87,87,87,87,104,104,104,104,120,120,120,120,170],
+  4: [170,170,170,170,197,197,197,197,224,224,224,224,250,250,250,250,330],
+};
 
-function fillDropdown(id, max){
-let el = document.getElementById(id);
+// Dropdowns
+function fill(id,max){
+let el=document.getElementById(id);
 for(let i=0;i<=max;i++){
 let o=document.createElement("option");
 o.value=i;
@@ -166,116 +185,76 @@ el.appendChild(o);
 }
 }
 
-fillDropdown("h1_stars",25);
-fillDropdown("h2_stars",25);
-fillDropdown("h1_page",4);
-fillDropdown("h2_page",4);
-fillDropdown("h1_bubble",16);
-fillDropdown("h2_bubble",16);
+fill("h1_stars",25);
+fill("h2_stars",25);
+fill("h1_page",4);
+fill("h2_page",4);
+fill("h1_bubble",16);
+fill("h2_bubble",16);
 
-// ----------------------
-// BERECHNUNG
-// ----------------------
-
+// Berechnung (NEU)
 function berechnen(){
 
-let h1s = +h1_stars.value;
-let h1f = parseInt(h1_fragments.value) || 0;
-let h1a = h1_awaken.value;
-let h1p = +h1_page.value;
-let h1b = +h1_bubble.value;
+let h1s=+h1_stars.value;
+let h1f=parseInt(h1_fragments.value)||0;
+let h1a=h1_awaken.value;
+let h1p=+h1_page.value;
+let h1b=+h1_bubble.value;
 
-let h2s = +h2_stars.value;
-let h2f = parseInt(h2_fragments.value) || 0;
-let h2a = h2_awaken.value;
-let h2p = +h2_page.value;
-let h2b = +h2_bubble.value;
+let h2s=+h2_stars.value;
+let h2f=parseInt(h2_fragments.value)||0;
+let h2a=h2_awaken.value;
+let h2p=+h2_page.value;
+let h2b=+h2_bubble.value;
 
+// Zwischensumme 1 & 2
+let zs1 = starValues[h1s] + h1f + (h1a==="Yes" ? awakenTable[h1p][h1b] : 0);
+let zs2 = starValues[h2s] + h2f + (h2a==="Yes" ? awakenTable[h2p][h2b] : 0);
 
-// ----------------------
-// ZWISCHENSUMMEN
-// ----------------------
+// Zwischensumme 3 & 4
+let zs3 = stonesValue[h1p][h1b];
+let zs4 = stonesValue[h2p][h2b];
 
-let zs1 = starValues[h1s] / 10;
-let zs2 = Math.ceil(h1f / 10);
+// Zwischensumme 5
+let zs5 = Math.ceil(Math.abs(zs1 - zs2) / 10);
 
-let zs3 = (h1a==="Yes" && awakenTable[h1p][h1b] !== undefined)
-? awakenTable[h1p][h1b]
-: 0;
+// Zwischensumme 6
+let zs6 = Math.abs(zs3 - zs4);
 
-let zs5 = starValues[h2s] / 10;
-let zs6 = Math.ceil(h2f / 10);
+// Awaken Regeln (bleiben gleich)
+let zs7 = 0;
 
-let zs7 = (h2a==="Yes" && awakenTable[h2p][h2b] !== undefined)
-? awakenTable[h2p][h2b]
-: 0;
+if(h1a==="Yes" && h2a==="No" && h1p>0 && h1b>0) zs7 = 100;
+if(h2a==="Yes" && h1a==="No" && h2p>0 && h2b>0) zs7 = 100;
 
-
-// ----------------------
-// AWAKEN REGELN
-// ----------------------
-
-// Reset
-h1_page.disabled = false;
-h1_bubble.disabled = false;
-h2_page.disabled = false;
-h2_bubble.disabled = false;
-
-let zs4 = 0;
-
-// beide No
-if(h1a==="No" && h2a==="No"){
-  zs3 = 0;
-  zs7 = 0;
-
-  h1_page.disabled = true;
-  h1_bubble.disabled = true;
-  h2_page.disabled = true;
-  h2_bubble.disabled = true;
-}
-
-// nur Hero1
-else if(h1a==="Yes" && h2a==="No"){
-  h2_page.disabled = true;
-  h2_bubble.disabled = true;
-
-  if(h1p > 0 && h1b > 0) zs4 = 100;
-}
-
-// nur Hero2
-else if(h2a==="Yes" && h1a==="No"){
-  h1_page.disabled = true;
-  h1_bubble.disabled = true;
-
-  if(h2p > 0 && h2b > 0) zs4 = 100;
-}
-
-// beide Yes → alles aktiv
-
-
-// ----------------------
-// FINALE RECHNUNG
-// ----------------------
-
-let zs8 = zs1 + zs2 + zs3;
-let zs9 = zs5 + zs6 + zs7;
-
-let zs10 = Math.abs(zs8 - zs9);
-
-let result = Math.round(zs10 + zs4);
+// Ergebnis
+let result = zs5 + zs6 + zs7;
 
 document.getElementById("result").innerText = result;
 }
 
-// ----------------------
-// EVENTS
-// ----------------------
+// Reset
+function resetHero1(){
+h1_stars.value=0;
+h1_fragments.value="";
+h1_awaken.value="No";
+h1_page.value=0;
+h1_bubble.value=0;
+}
 
-document.querySelectorAll("input,select")
-.forEach(e=>e.addEventListener("change",berechnen));
+function resetHero2(){
+h2_stars.value=0;
+h2_fragments.value="";
+h2_awaken.value="No";
+h2_page.value=0;
+h2_bubble.value=0;
+}
 
-// Initial
-berechnen();
+function resetAll(){
+resetHero1();
+resetHero2();
+document.getElementById("result").innerText="-";
+}
 
 </script>
 
