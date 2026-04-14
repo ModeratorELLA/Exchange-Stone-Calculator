@@ -7,7 +7,7 @@
 <style>
 body {
   font-family: 'Segoe UI', Arial;
-  background: linear-gradient(135deg, #1e1e2f, #2a2a40);
+  background: #1e1e2f;
   color: #fff;
   padding: 20px;
 }
@@ -19,7 +19,6 @@ body {
 
 h1 {
   text-align: center;
-  margin-bottom: 30px;
 }
 
 .grid {
@@ -34,29 +33,26 @@ h1 {
   border-radius: 12px;
 }
 
-label {
-  display: block;
-  margin-top: 10px;
-}
-
 input, select {
   width: 100%;
-  padding: 8px;
+  padding: 10px;
   margin-top: 5px;
   border-radius: 6px;
   border: none;
+  box-sizing: border-box;
+  font-size: 14px;
   background: #1e1e2f;
   color: white;
 }
 
-button {
-  padding: 10px;
-  margin-top: 10px;
-  border: none;
-  border-radius: 8px;
-  background: #6c8cff;
-  color: white;
-  cursor: pointer;
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type=number] {
+  appearance: textfield;
 }
 
 .button-group {
@@ -66,6 +62,14 @@ button {
   margin-top: 20px;
 }
 
+.calc-btn {
+  background: #4caf50;
+}
+
+.reset-btn {
+  background: #e74c3c;
+}
+
 .result-box {
   margin-top: 30px;
   text-align: center;
@@ -73,8 +77,6 @@ button {
 
 #result {
   font-size: 32px;
-  margin-top: 10px;
-  color: #6c8cff;
 }
 </style>
 </head>
@@ -83,67 +85,49 @@ button {
 
 <div class="container">
 
-<h1>Hero Exchange - Exchange Stone Calculator</h1>
+<h1>Hero Exchange Calculator</h1>
 
 <div class="grid">
 
 <div class="card">
 <h3>Hero 1</h3>
-
-<label>Stars</label>
+<label>Stars:</label>
 <select id="h1_stars"></select>
-
-<label>Extra Fragments</label>
+<label>Extra Fragments:</label>
 <input type="number" id="h1_fragments">
-
-<label>Awaken</label>
-<select id="h1_awaken">
-<option>Yes</option>
-<option>No</option>
-</select>
-
-<label>Awakening Page</label>
+<label>Awaken:</label>
+<select id="h1_awaken"><option>Yes</option><option>No</option></select>
+<label>Awakening Page:</label>
 <select id="h1_page"></select>
-
-<label>Awakening Bubble</label>
+<label>Awakening Bubble:</label>
 <select id="h1_bubble"></select>
-
 </div>
 
 <div class="card">
 <h3>Hero 2</h3>
-
-<label>Stars</label>
+<label>Stars:</label>
 <select id="h2_stars"></select>
-
-<label>Extra Fragments</label>
+<label>Extra Fragments:</label>
 <input type="number" id="h2_fragments">
-
-<label>Awaken</label>
-<select id="h2_awaken">
-<option>Yes</option>
-<option>No</option>
-</select>
-
-<label>Awakening Page</label>
+<label>Awaken:</label>
+<select id="h2_awaken"><option>Yes</option><option>No</option></select>
+<label>Awakening Page:</label>
 <select id="h2_page"></select>
-
-<label>Awakening Bubble</label>
+<label>Awakening Bubble:</label>
 <select id="h2_bubble"></select>
-
 </div>
 
 </div>
 
 <div class="button-group">
-<button onclick="berechnen()">Calculate</button>
-<button onclick="resetHero1()">Reset Hero 1</button>
-<button onclick="resetHero2()">Reset Hero 2</button>
-<button onclick="resetAll()">Reset All</button>
+<button class="calc-btn" onclick="berechnen()">Calculate</button>
+<button class="reset-btn" onclick="resetHero1()">Reset Hero 1</button>
+<button class="reset-btn" onclick="resetHero2()">Reset Hero 2</button>
+<button class="reset-btn" onclick="resetAll()">Reset All</button>
 </div>
 
 <div class="result-box">
-<h3>Needed Exchange Stones</h3>
+<h3>Needed Stones:</h3>
 <div id="result">-</div>
 </div>
 
@@ -151,30 +135,60 @@ button {
 
 <script>
 
-// Tabellen
-const starValues = {
-0:0,1:20,2:40,3:60,4:80,5:100,6:140,7:180,8:220,9:260,
-10:300,11:370,12:440,13:510,14:580,15:650,16:770,
-17:890,18:1010,19:1130,20:1250,21:1450,22:1650,23:1850,24:2050,25:2250
-};
+// ----------------------
+// AUTO SAVE
+// ----------------------
+function save(){
+localStorage.setItem("calcData", JSON.stringify({
+h1s:h1_stars.value,
+h1f:h1_fragments.value,
+h1a:h1_awaken.value,
+h1p:h1_page.value,
+h1b:h1_bubble.value,
+h2s:h2_stars.value,
+h2f:h2_fragments.value,
+h2a:h2_awaken.value,
+h2p:h2_page.value,
+h2b:h2_bubble.value
+}));
+}
 
-const awakenTable = {
-  0: [0],
-  1: [0,20,40,60,80,100,120,140,160,180,200,220,240,260,280,300,360],
-  2: [360,400,440,480,520,560,600,640,680,720,760,800,840,880,920,960,1080],
-  3: [1080,1140,1200,1260,1320,1380,1440,1500,1560,1620,1680,1740,1800,1860,1920,1980,2160],
-  4: [2160,2240,2320,2400,2480,2560,2640,2720,2800,2880,2960,3040,3120,3200,3280,3360,3600]
-};
+function load(){
+let data = JSON.parse(localStorage.getItem("calcData")||"{}");
+if(!data) return;
 
-const stonesValue = {
-  0: [0],
-  1: [0,0,0,0,4,4,4,4,7,7,7,7,10,10,10,10,20],
-  2: [20,20,20,20,29,29,29,29,37,37,37,37,45,45,45,45,70],
-  3: [70,70,70,70,87,87,87,87,104,104,104,104,120,120,120,120,170],
-  4: [170,170,170,170,197,197,197,197,224,224,224,224,250,250,250,250,330],
-};
+h1_stars.value=data.h1s||0;
+h1_fragments.value=data.h1f||"";
+h1_awaken.value=data.h1a||"No";
+h1_page.value=data.h1p||0;
+h1_bubble.value=data.h1b||0;
 
-// Dropdowns
+h2_stars.value=data.h2s||0;
+h2_fragments.value=data.h2f||"";
+h2_awaken.value=data.h2a||"No";
+h2_page.value=data.h2p||0;
+h2_bubble.value=data.h2b||0;
+}
+
+// ----------------------
+// VALIDATION
+// ----------------------
+function valid(n){
+return !isNaN(n) && n >= 0;
+}
+
+// ----------------------
+// TABLES
+// ----------------------
+const starValues={0:0,1:20,2:40,3:60,4:80,5:100,6:140,7:180,8:220,9:260,10:300,11:370,12:440,13:510,14:580,15:650,16:770,17:890,18:1010,19:1130,20:1250,21:1450,22:1650,23:1850,24:2050,25:2250};
+
+const awakenTable={0:[0],1:[0,20,40,60,80,100,120,140,160,180,200,220,240,260,280,300,360],2:[360,400,440,480,520,560,600,640,680,720,760,800,840,880,920,960,1080],3:[1080,1140,1200,1260,1320,1380,1440,1500,1560,1620,1680,1740,1800,1860,1920,1980,2160],4:[2160,2240,2320,2400,2480,2560,2640,2720,2800,2880,2960,3040,3120,3200,3280,3360,3600]};
+
+const stonesValue={0:[0],1:[0,0,0,0,4,4,4,4,7,7,7,7,10,10,10,10,20],2:[20,20,20,20,29,29,29,29,37,37,37,37,45,45,45,45,70],3:[70,70,70,70,87,87,87,87,104,104,104,104,120,120,120,120,170],4:[170,170,170,170,197,197,197,197,224,224,224,224,250,250,250,250,330]};
+
+// ----------------------
+// DROPDOWNS
+// ----------------------
 function fill(id,max){
 let el=document.getElementById(id);
 for(let i=0;i<=max;i++){
@@ -185,76 +199,50 @@ el.appendChild(o);
 }
 }
 
-fill("h1_stars",25);
-fill("h2_stars",25);
-fill("h1_page",4);
-fill("h2_page",4);
-fill("h1_bubble",16);
-fill("h2_bubble",16);
+fill("h1_stars",25); fill("h2_stars",25);
+fill("h1_page",4); fill("h2_page",4);
+fill("h1_bubble",16); fill("h2_bubble",16);
 
-// Berechnung (NEU)
+// ----------------------
+// CALC
+// ----------------------
 function berechnen(){
 
-let h1s=+h1_stars.value;
 let h1f=parseInt(h1_fragments.value)||0;
-let h1a=h1_awaken.value;
-let h1p=+h1_page.value;
-let h1b=+h1_bubble.value;
-
-let h2s=+h2_stars.value;
 let h2f=parseInt(h2_fragments.value)||0;
-let h2a=h2_awaken.value;
-let h2p=+h2_page.value;
-let h2b=+h2_bubble.value;
 
-// Zwischensumme 1 & 2
-let zs1 = starValues[h1s] + h1f + (h1a==="Yes" ? awakenTable[h1p][h1b] : 0);
-let zs2 = starValues[h2s] + h2f + (h2a==="Yes" ? awakenTable[h2p][h2b] : 0);
-
-// Zwischensumme 3 & 4
-let zs3 = stonesValue[h1p][h1b];
-let zs4 = stonesValue[h2p][h2b];
-
-// Zwischensumme 5
-let zs5 = Math.ceil(Math.abs(zs1 - zs2) / 10);
-
-// Zwischensumme 6
-let zs6 = Math.abs(zs3 - zs4);
-
-// Awaken Regeln (bleiben gleich)
-let zs7 = 0;
-
-if(h1a==="Yes" && h2a==="No" && h1p>0 && h1b>0) zs7 = 100;
-if(h2a==="Yes" && h1a==="No" && h2p>0 && h2b>0) zs7 = 100;
-
-// Ergebnis
-let result = zs5 + zs6 + zs7;
-
-document.getElementById("result").innerText = result;
+if(!valid(h1f)||!valid(h2f)){
+alert("Invalid input!");
+return;
 }
 
-// Reset
-function resetHero1(){
-h1_stars.value=0;
-h1_fragments.value="";
-h1_awaken.value="No";
-h1_page.value=0;
-h1_bubble.value=0;
+let zs1=starValues[h1_stars.value]+h1f+(h1_awaken.value==="Yes"?awakenTable[h1_page.value][h1_bubble.value]:0);
+let zs2=starValues[h2_stars.value]+h2f+(h2_awaken.value==="Yes"?awakenTable[h2_page.value][h2_bubble.value]:0);
+
+let zs3=stonesValue[h1_page.value][h1_bubble.value];
+let zs4=stonesValue[h2_page.value][h2_bubble.value];
+
+let zs5=Math.ceil(Math.abs(zs1-zs2)/10);
+let zs6=Math.abs(zs3-zs4);
+
+let zs7=0;
+if(h1_awaken.value==="Yes"&&h2_awaken.value==="No"&&h1_page.value>0&&h1_bubble.value>0) zs7=100;
+if(h2_awaken.value==="Yes"&&h1_awaken.value==="No"&&h2_page.value>0&&h2_bubble.value>0) zs7=100;
+
+result.innerText=zs5+zs6+zs7;
+
+save();
 }
 
-function resetHero2(){
-h2_stars.value=0;
-h2_fragments.value="";
-h2_awaken.value="No";
-h2_page.value=0;
-h2_bubble.value=0;
-}
+// ----------------------
+// RESET
+// ----------------------
+function resetHero1(){h1_stars.value=0;h1_fragments.value="";h1_awaken.value="No";h1_page.value=0;h1_bubble.value=0;save();}
+function resetHero2(){h2_stars.value=0;h2_fragments.value="";h2_awaken.value="No";h2_page.value=0;h2_bubble.value=0;save();}
+function resetAll(){resetHero1();resetHero2();result.innerText="-";}
 
-function resetAll(){
-resetHero1();
-resetHero2();
-document.getElementById("result").innerText="-";
-}
+// Load saved data
+load();
 
 </script>
 
